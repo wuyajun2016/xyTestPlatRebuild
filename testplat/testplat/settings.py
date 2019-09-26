@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+import datetime
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -37,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',  # drf框架
+    'rest_framework_swagger',  # swagger框架
     'userapp',
     'chartapp',
     'casemanageapp',
@@ -131,6 +134,54 @@ USE_TZ = False  # 一般不跨时区的应用，可以不使用时区
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# token失效时间
+JWT_AUTH = {
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=1),
+}
+
+# token rest framework 配置实现
+REST_FRAMEWORK = {
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.AutoSchema',  # 不加这个，swagger会报错
+    'DEFAULT_VERSIONING_CLASS':"rest_framework.versioning.URLPathVersioning",  # 全局使用版本控制
+    'DEFAULT_VERSION': 'v1',  # 默认版本
+    'ALLOWED_VERSIONS': ['v1', 'v2'],  # 允许的版本
+    'VERSION_PARAM': 'version',  # URL中获取值的key
+    'DEFAULT_PERMISSION_CLASSES': (
+        # 全局权限：需要已认证才能调用接口
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        # 默认的验证是按照验证列表从上到下的验证
+        'rest_framework_jwt.authentication.JSONWebTokenAuthentication',  # 基于Json-Web-Token的验证(urls.py配置对应路由）-线上用这个
+        'rest_framework.authentication.SessionAuthentication',  # swagger登录需要基于此-测试环境打开方便测试，线上可注释掉
+    ),
+    # 重构render方法:返回格式统一处理
+    'DEFAULT_RENDERER_CLASSES': (
+        'testplat.utils.rendererresponse.CustomRenderer',
+    ),
+}
+
+# swagger 配置项
+SWAGGER_SETTINGS = {
+    # 基础样式
+    'SECURITY_DEFINITIONS': {
+        "basic": {
+            'type': 'basic'
+        }
+    },
+    # 如果这里配置了LOGIN_URL或LOGOUT_URL, 那么需要在urls.py中加上r'^api-auth/'的url，不然进入swagger会报错
+    # 目前加了REST_FRAMEWORK的配置，swagger就无法进行登录了，不知道为何(需要将SessionAuthentication打开才能登录,这个是专门测试用得)
+    'LOGIN_URL': 'rest_framework:login',
+    'LOGOUT_URL': 'rest_framework:logout',
+    # 接口文档中方法列表以首字母升序排列
+    'APIS_SORTER': 'alpha',
+    # 如果支持json提交, 则接口文档中包含json输入框
+    'JSON_EDITOR': True,
+    # 方法列表字母排序
+    'OPERATIONS_SORTER': 'alpha',
+    'VALIDATOR_URL': None,
+}
 
 # 日志基础配置
 BASE_LOG_DIR = os.path.join(BASE_DIR, "log")
