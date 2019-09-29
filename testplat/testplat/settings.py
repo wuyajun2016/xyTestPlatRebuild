@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 import datetime
 
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -40,6 +41,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',  # drf框架
     'rest_framework_swagger',  # swagger框架
+    'djcelery',  # 定时任务
     'userapp',
     'chartapp',
     'casemanageapp',
@@ -59,6 +61,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'testplat.utils.M1.Middle1',
 ]
 
 ROOT_URLCONF = 'testplat.urls'
@@ -121,7 +124,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'zh-hans'
 
-TIME_ZONE = 'Asia/Shanghai'   # 使用中文编码2
+TIME_ZONE = 'Asia/Shanghai'   # 使用上海时区
 
 USE_I18N = True
 
@@ -135,15 +138,20 @@ USE_TZ = False  # 一般不跨时区的应用，可以不使用时区
 
 STATIC_URL = '/static/'
 
-# token失效时间
+# 动态的上传文件配置
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media').replace('\\', '/')
+MEDIA_URL = '/media/'
+
+# token失效时间,实际上默认配置就是跟下面一样的
 JWT_AUTH = {
-    'JWT_EXPIRATION_DELTA': datetime.timedelta(days=1),
+    'JWT_EXPIRATION_DELTA': datetime.timedelta(seconds=300),  # 不用的情况下，300秒后过期
+    'JWT_REFRESH_EXPIRATION_DELTA': datetime.timedelta(days=7),  # 一直在用的话7天后才会过期(保持一直刷新token)
 }
 
 # token rest framework 配置实现
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.AutoSchema',  # 不加这个，swagger会报错
-    'DEFAULT_VERSIONING_CLASS':"rest_framework.versioning.URLPathVersioning",  # 全局使用版本控制
+    'DEFAULT_VERSIONING_CLASS': "rest_framework.versioning.URLPathVersioning",  # 全局使用版本控制
     'DEFAULT_VERSION': 'v1',  # 默认版本
     'ALLOWED_VERSIONS': ['v1', 'v2'],  # 允许的版本
     'VERSION_PARAM': 'version',  # URL中获取值的key
@@ -160,6 +168,7 @@ REST_FRAMEWORK = {
     'DEFAULT_RENDERER_CLASSES': (
         'testplat.utils.rendererresponse.CustomRenderer',
     ),
+    'EXCEPTION_HANDLER': 'testplat.utils.exceptionhander.exception_handler',
 }
 
 # swagger 配置项
@@ -181,6 +190,47 @@ SWAGGER_SETTINGS = {
     # 方法列表字母排序
     'OPERATIONS_SORTER': 'alpha',
     'VALIDATOR_URL': None,
+}
+
+# celery settings
+# celery中间人 redis://redis服务所在的ip地址:端口/数据库
+BROKER_URL = 'redis://localhost:6379/0'
+# celery结果返回，可用于跟踪结果
+CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+# celery内容等消息的格式设置
+CELERY_ACCEPT_CONTENT = ['application/json', ]
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+# celery时区设置，使用settings中TIME_ZONE同样的时区
+CELERY_TIMEZONE = TIME_ZONE
+# 跑完3个任务就销毁work(防止积累太多内存不释放)
+CELERYD_MAX_TASKS_PER_CHILD = 3
+# 定时任务调度器
+CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
+
+# 发送邮件配置
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.qq.com'                       # SMTP地址 例如: smtp.163.com
+EMAIL_PORT = 587                   # SMTP端口 例如: 25
+EMAIL_HOST_USER = '491395033@qq.com'                  # qq的邮箱 例如: xxxxxx@163.com
+EMAIL_HOST_PASSWORD = 'xxx'              # 我的邮箱密码 例如  xxxxxxxxx
+EMAIL_SUBJECT_PREFIX = '重置密码'       # 为邮件Subject-line前缀,默认是'[django]'
+EMAIL_USE_TLS = True                  # 与SMTP服务器通信时，是否启动TLS链接(安全链接)。默认是false
+DEFAULT_FROM_EMAIL = '491395033@qq.com'
+
+# 其它配置
+EXPIRE_TIME = 60*60*24  # 邮件中，验证码过期时间
+VALIDATE_CACHE_TIME = 60*60*24  # 邮件发送的验证码缓存时间
+
+# redis中的cache配置(pip install django-redis)
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'localhost:6379',
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        },
+    },
 }
 
 # 日志基础配置
