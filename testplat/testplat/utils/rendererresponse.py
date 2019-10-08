@@ -2,6 +2,8 @@
 from rest_framework.renderers import JSONRenderer
 import re
 import logging
+from datetime import datetime
+from .myEnum import ResponseEnum
 
 logger = logging.getLogger(__name__)
 collect_logger = logging.getLogger("collect")
@@ -11,17 +13,19 @@ def statusJudge(data, code):
     """不同状态不同的获取msg方式"""
     if 'ErrorDetail' in str(data):
         # token过期|未登录
-        if code == 401:
+        if code == ResponseEnum.un_auth.value:
             return '未授权'
         # 校验错误
-        if code == 400 or code == 404:
+        if code == ResponseEnum.params_error.value or code == ResponseEnum.page_not_found.value:
             msg_result = []
             for result in (re.findall('[\u4e00-\u9fa5]+', str(data))):
                 msg_result.append(result)
             return ','.join(msg_result)
-        if code == 507 or code == 500:
+        # 服务器内部代码有错误
+        if code == ResponseEnum.server_error.value or code == ResponseEnum.insufficient_storage.value:
             return '服务器内部错误'
-        collect_logger.info('未处理的获取msg方式，数据为：{},code为：{}'.format(data, code))
+        collect_logger.info('[{}]未处理的获取msg方式，数据为：{},code为：{}'.format(
+            datetime.now().strftime('%Y-%m-%d %H:%M:%S'), data, code))
         return '服务器内部错误，请联系管理员'
     return 'success'
 
