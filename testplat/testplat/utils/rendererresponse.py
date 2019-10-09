@@ -16,7 +16,8 @@ def statusJudge(data, code):
         if code == ResponseEnum.un_auth.value:
             return '未授权'
         # 校验错误
-        if code == ResponseEnum.params_error.value or code == ResponseEnum.page_not_found.value:
+        if code == ResponseEnum.params_error.value or code == ResponseEnum.page_not_found.value \
+                or code == ResponseEnum.throttle_limit.value:
             msg_result = []
             for result in (re.findall('[\u4e00-\u9fa5]+', str(data))):
                 msg_result.append(result)

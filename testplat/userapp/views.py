@@ -6,12 +6,16 @@ from rest_framework import permissions
 from rest_framework_jwt.settings import api_settings
 import logging
 from .models import *
-from testplat.utils.mypage import ArticlePagination  # 将testplat设置成sourceroot，不知道部署到uwsgi行不行???
+from testplat.utils.mypage import ArticlePagination  # 将testplat设置成sourceroot，或则直接报错貌似也可以启动服务
 from testplat.utils.myCache import get_validate_code
+from testplat.utils.TestPlatRateThrottle import TpRateThrottle
 import os, io
 from PIL import Image
 from django.conf import settings
 from .email import send_email
+from rest_framework import filters
+from django_filters.rest_framework import DjangoFilterBackend
+from testplat.utils.filter import UserExtFilter
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +131,7 @@ class UserSetPasswordNotLoginViewSet(mixins.CreateModelMixin, viewsets.GenericVi
     permission_classes = (permissions.AllowAny,)
 
     def create(self, request, *args, **kwargs):
+        self.dispatch()
         """
          用户修改密码（没有登录时修改-验证校验码/用户名）
         :param request:
@@ -190,6 +195,14 @@ class UserExtViewSet(mixins.CreateModelMixin, mixins.UpdateModelMixin, mixins.Re
     serializer_class = UserExtSerializer
     pagination_class = ArticlePagination
     lookup_field = 'user'
+    # 1)使用rest_framework自带的过滤器
+    # filter_backends = (filters.SearchFilter, filters.OrderingFilter)
+    # search_fields = ('nickname',)
+    # ordering = ('-id', )
+    # 2)使用第三方的django_filters
+    # filter_backends = (DjangoFilterBackend,)  # 全局配置了，这里不用写
+    # filter_fields = ('nickname', )  # 第三方的简单使用
+    filter_class = UserExtFilter  # 第三方自定义使用
 
     def update(self, request, *args, **kwargs):
         """

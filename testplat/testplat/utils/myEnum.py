@@ -17,6 +17,8 @@ class ResponseEnum(Enum):
     page_not_found = 404
     # 方法错误
     method_error = 405
+    # 超过访问频率
+    throttle_limit = 429
     # 服务器内部错误
     server_error = 500
     insufficient_storage = 507
