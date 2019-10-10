@@ -12,11 +12,13 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 
 import os
 import datetime
-
+import sys
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
+# sys.path.insert(0, BASE_DIR)
+# sys.path.insert(0, os.path.join(BASE_DIR, 'testplat'))
+# sys.path.insert(0, os.path.join(BASE_DIR, 'userapp'))
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/2.2/howto/deployment/checklist/
@@ -42,6 +44,8 @@ INSTALLED_APPS = [
     'rest_framework',  # drf框架
     'rest_framework_swagger',  # swagger框架
     'djcelery',  # 定时任务
+    'django_filters',  # 过滤器
+    'corsheaders',  # 跨域
     'userapp',
     'chartapp',
     'casemanageapp',
@@ -56,6 +60,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # 跨域
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -169,6 +174,15 @@ REST_FRAMEWORK = {
         'testplat.utils.rendererresponse.CustomRenderer',
     ),
     'EXCEPTION_HANDLER': 'testplat.utils.exceptionhander.exception_handler',
+    # 访问频率限制
+    'DEFAULT_THROTTLE_CLASSES': [
+        'testplat.utils.TestPlatRateThrottle.TpRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'test_plat': '10/m',
+    },
+    # 配置过滤
+    'DEFAULT_FILTER_BACKENDS': ('django_filters.rest_framework.DjangoFilterBackend',),
 }
 
 # swagger 配置项
@@ -213,7 +227,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.qq.com'                       # SMTP地址 例如: smtp.163.com
 EMAIL_PORT = 587                   # SMTP端口 例如: 25
 EMAIL_HOST_USER = '491395033@qq.com'                  # qq的邮箱 例如: xxxxxx@163.com
-EMAIL_HOST_PASSWORD = 'xxx'              # 我的邮箱密码 例如  xxxxxxxxx
+EMAIL_HOST_PASSWORD = '******'              # 我的邮箱密码 例如  xxxxxxxxx
 EMAIL_SUBJECT_PREFIX = '重置密码'       # 为邮件Subject-line前缀,默认是'[django]'
 EMAIL_USE_TLS = True                  # 与SMTP服务器通信时，是否启动TLS链接(安全链接)。默认是false
 DEFAULT_FROM_EMAIL = '491395033@qq.com'
@@ -314,3 +328,36 @@ LOGGING = {
         }
     },
 }
+
+# 跨域增加忽略
+CORS_ALLOW_CREDENTIALS = True
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ORIGIN_WHITELIST = (
+    "*"
+)
+
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+    'VIEW',
+)
+# 这里需要配上全部的，不能直接用*，不知道为啥
+CORS_ALLOW_HEADERS = (
+    'accept',
+    'XMLHttpRequest',
+    'X_FILENAME',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'Pragma',
+    'X-Custom-Header',
+)

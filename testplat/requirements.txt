@@ -12,6 +12,8 @@ coreschema==0.0.4
 cryptography==2.7
 Django==2.2.5
 django-celery==3.2.2
+django-cors-headers==2.4.0
+django-filter==2.2.0
 django-redis==4.10.0
 django-rest-swagger==2.2.0
 djangorestframework==3.10.3
