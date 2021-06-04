@@ -10,7 +10,7 @@ chardet==3.0.4
 coreapi==2.3.3
 coreschema==0.0.4
 cryptography==2.7
-Django==2.2.5
+Django==2.2.21
 django-celery==3.2.2
 django-cors-headers==2.4.0
 django-filter==2.2.0
